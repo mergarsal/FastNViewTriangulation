@@ -1,0 +1,27 @@
+# Number iterations
+5
+# Number points per problem instance
+10
+# Number cameras 
+5, 5, 10, 50, 100, 200
+# Maximum parallax
+1, 3.0
+# Focal length
+1, 512
+# Noise
+4, 0.5, 1.5, 3.0, 5.0
+# Distance to center
+1, 3.0
+# Use custom t
+0
+# Translation vector
+3, 1, 1,1
+# Maximum angle rotation
+0.5
+# Pose generation option
+2
+# Noise rotation
+0.01
+# Noise translation vector 
+0.01
+
