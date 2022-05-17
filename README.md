@@ -1,6 +1,6 @@
 # Fast N-View triangulation
 
-Coming soon ...
+Manuscript in review
 
 ---
 This repository contains the code 
@@ -34,9 +34,10 @@ and thus the dependency.
 
 
 ## Build
+
 ```
-git clone https://github.com/mergarsal/FastMViewTriangulation.git
-cd FastMViewTriangulation
+git clone https://github.com/mergarsal/FastNViewTriangulation.git
+cd FastNViewTriangulation
 
 mkdir build & cd build 
 
@@ -47,6 +48,7 @@ make -jX
 ```
 
 The compiled examples should be inside the `bin` directory. Run: 
+
 ```
         ./bin/example_base
 ```
@@ -55,11 +57,13 @@ The compiled examples should be inside the `bin` directory. Run:
 
 ## Install 
 In `build` folder: 
+
 ```
         sudo make install
 ```
 
 We also provide the uninstall script: 
+
 ```
         sudo make uninstall
 ```
@@ -70,23 +74,27 @@ We also provide the uninstall script:
 
 # Use in external project 
 1. Install our library with 
-`` 
+
+```
 sudo make install 
-``
+```
 
 2. In your project, find the library. 
-Add in your CMakeLists
-``
+
+
+```
 add_definitions(-march=native)
 
 find_package(NViewsTrian REQUIRED)
-``
+```
 
 3. Include the library as target, e.g., 
-``
+
+```
 add_executable(example_base ${CMAKE_CURRENT_SOURCE_DIR}/example_base.cpp)
+
 target_link_libraries(example_base 
                               NViewsTrian      
                      )
-``
+```              
 
