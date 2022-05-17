@@ -25,26 +25,52 @@ namespace NViewsTrian
 {
 
 
+void invertPosDiagMatrix(const Eigen::VectorXd & D, 
+                         double thresh, 
+                         Eigen::MatrixXd & D2)
+{
+    
+    Eigen::VectorXd D3 = D; 
+    for (int i = 0; i < D.rows(); i++)
+    {
+        D3(i) = (D3(i) < thresh) ? 0 : 1 / D3(i);
+    
+    }
+    D2 = D3.asDiagonal();
+    
+}                      
+                      
+                      
+
 // second version: faster
 double NViewCertClass::computeMult(const Eigen::VectorXd & sol, 
                                    const Eigen::MatrixXd & C, 
                                    Eigen::VectorXd & sol_mult)
 {
   
-        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> svd(C.transpose() * C);
-        Eigen::MatrixXd U = svd.eigenvectors();
-        Eigen::MatrixXd D = svd.eigenvalues().cwiseAbs().cwiseSqrt().asDiagonal().inverse(); 
-        
-        Eigen::VectorXd ss = D * U.transpose() * sol; 
-        
-      
-        sol_mult =  2 * C * U * D * ss;
-        
+        if (C.rows() == 1) 
+            sol_mult = 2 * C * sol / (C.squaredNorm()); 
+              
+        else
+        {
+            Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> svd(C.transpose() * C);
+            Eigen::MatrixXd U = svd.eigenvectors();
+            Eigen::MatrixXd D; 
+            invertPosDiagMatrix(svd.eigenvalues().cwiseAbs().cwiseSqrt(), 1e-06, D); 
+            
+            Eigen::VectorXd ss = D * U.transpose() * sol; 
+            
+          
+            sol_mult =  2 * C * U * D * ss;
+                    
+                  
+        }
         
         double error_m = ( 0.5 * C.transpose() * sol_mult - sol).squaredNorm(); 
-        
-        return error_m;        
-        
+            
+          
+        return error_m;  
+            
         }
   
 
@@ -84,6 +110,8 @@ double NViewCertClass::computeHessian(const double cost_sol,
                 
         Eigen::VectorXd eigen_hess = eigen_solver_M.eigenvalues().real();
         auto time_mult2 = duration_cast<nanoseconds>(high_resolution_clock::now() - start_t_mult2);
+ 
+      
         
         if (debug_)
         {
@@ -114,6 +142,7 @@ NCertRes NViewCertClass::checkOptimality(const Eigen::VectorXd & sol,
         // 2. Form and check Hessian
         double cost_sol = sol.dot(sol); 
         
+        
         Eigen::MatrixXd Hess;
         auto start_t_hess = high_resolution_clock::now();
         
@@ -131,6 +160,7 @@ NCertRes NViewCertClass::checkOptimality(const Eigen::VectorXd & sol,
         
         NCertRes res; 
         res.min_eig = min_eigen; 
+        res.error_mult = error_lin; 
         
         res.time_mult = (double) time_mult.count(); 
         res.time_hess = (double) time_hess.count();

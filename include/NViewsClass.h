@@ -56,6 +56,7 @@ namespace NViewsTrian
                 double time_cert_hess = 100; 
                 
                 double min_eig = -1; 
+                double error_mult = -1; 
                 
                 
         

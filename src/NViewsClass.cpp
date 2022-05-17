@@ -260,7 +260,6 @@ NViewsResult NViewsClass::correctObservations(NViewsOptions & options)
         
         // Check optimality with sufficient condition
 
-        
          // suff. condition       
         NViewCertClass cert_obj(N_cams_, constr_red_, options.debug_cert); 
     
@@ -273,7 +272,8 @@ NViewsResult NViewsClass::correctObservations(NViewsOptions & options)
         
         /* Save results */
         
-        res.min_eig = res_cert.min_eig; 
+        res.min_eig = res_cert.min_eig;
+        res.error_mult = res_cert.error_mult;  
         res.time_cert_mult = res_cert.time_mult;
         res.time_cert_hess = res_cert.time_hess;
                 

@@ -15,6 +15,7 @@ namespace NViewsTrian
         struct NCertRes
         {
                 double min_eig = -10;
+                double error_mult = -10; 
                 Eigen::VectorXd mult; 
                 Eigen::MatrixXd Hess; 
                 
