@@ -24,6 +24,7 @@ namespace NViewsTrian
                 bool record_constr = false;  // record all the values
                 
                 bool debug = true;  // debug flag
+                bool debug_cert = false;  // debug flag for certifier
                 NViewsOptions(){};
         };  // end of struct options
         
@@ -49,7 +50,14 @@ namespace NViewsTrian
                 double sq_constr_init = 10; 
                 
                 double time_init = 100; 
-                double time_ref = 100; 
+                double time_ref = 100;
+                double time_opt = 100;  
+                double time_cert_mult = 100; 
+                double time_cert_hess = 100; 
+                
+                double min_eig = -1; 
+                
+                
         
                 NViewsResult(){};
         };  // end of struct result
@@ -75,21 +83,21 @@ namespace NViewsTrian
                         double refineCorrection(const Eigen::MatrixXd & A, 
                                                 const Eigen::VectorXd & b, 
                                                 const Eigen::VectorXd & sol_init, 
-                                                Eigen::VectorXd & sol_ref);
+                                                Eigen::VectorXd & sol_ref, 
+                                                Eigen::MatrixXd & Ci);
                         /* Main function */    
                         NViewsResult correctObservations(NViewsOptions & options);
                         
                         /* Show results */
                         void printResult(NViewsResult & res_corr);
-                        
-                        void getConstr(std::vector<Eigen::MatrixXd> &C){ C = constr_exp_;};
-                        
+                                                
                         void getConstrRed(std::vector<Constr2View> &C){ C = constr_red_;};
+                        
+                        int checkOpt(const Eigen::VectorXd & sol_init, double & time_opt, int &, int & ); 
                         
                 private:
                         int M_;  // number constraints
                         int N_cams_;   // number cameras
-                        std::vector<Eigen::MatrixXd> constr_exp_;  // constraints
                         std::vector<Constr2View> constr_red_;      // reduced constraints
                         bool constr_are_created_;  // true if the constraints are done
                 

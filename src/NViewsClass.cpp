@@ -10,6 +10,8 @@
 #include "NViewsUtils.h"
 // header
 #include "NViewsClass.h"
+// certifier 
+#include "NViewsCertifier.h"
 
 #include <chrono>  // timer
 
@@ -22,7 +24,6 @@ void NViewsClass::createProblemMatrices(const std::vector<PairObj> & obj,
                                         const int N_cams)
 {
   
-        constr_exp_.empty();
         constr_red_.empty(); 
         
         M_ = obj.size();
@@ -39,18 +40,7 @@ void NViewsClass::createProblemMatrices(const std::vector<PairObj> & obj,
                 int id_1 = (obj[i].id1) * 2; 
                 int id_2 = (obj[i].id2) * 2; 
                 
-                // std::cout << "Error ep: " << p2.dot(F * p1) << std::endl;
-                // Eigen::MatrixXd Qs(s_constr, s_constr);
-                
-                /*
-                Qs.setZero();
-                // fill just half of the matrix and THEN symmetrize
-                Qs.block<2,2>(id_1, id_2) = F.transpose().topLeftCorner(2,2);                 
-                Qs.block<2,1>(id_1, s_constr - 1) = Fp2.topRows(2);           
-                Qs.block<2,1>(id_2, s_constr - 1) = Fp1.topRows(2); 
-                Qs(s_constr - 1, s_constr - 1) = e_ep;
-                constr_exp_.push_back( 0.5 * (Qs + Qs.transpose()) );
-                */
+               
                 
                 // create struct
                 Constr2View ci; 
@@ -73,15 +63,13 @@ double NViewsClass::initCorrection(Eigen::VectorXd & sol_init,
                                    Eigen::MatrixXd & A, 
                                    Eigen::VectorXd & b)
 {
-        // Eigen::MatrixXd A(M_, 2 * N_cams_); 
-        // Eigen::VectorXd b(M_);
+        
         A.resize(M_, 2 * N_cams_); 
         b.resize(M_);
         
         A.setZero(); 
         b.setZero(); 
         
-        // auto start_t_init = high_resolution_clock::now();
         
         for (int i=0; i < M_; i++)
         {                
@@ -92,19 +80,11 @@ double NViewsClass::initCorrection(Eigen::VectorXd & sol_init,
                 
                 b(i) = constr_red_[i].b;
         }
-        // std::cout << "Matrix A:\n" << A << std::endl; 
-        // std::cout << "Matrix A:\n" << A.transpose() << std::endl;
-        // std::cout << "Vector b:\n" << b << std::endl; 
-        // auto time_init = duration_cast<nanoseconds>(high_resolution_clock::now() - start_t_init);
-        
-        // auto start_t_init2 = high_resolution_clock::now();
+       
         sol_init.resize(2 * N_cams_);
         double error_sol = solveLinearSystemMinNorm(A.transpose() * A, - A.transpose() * b, sol_init);
         
-        // auto time_init2 = duration_cast<nanoseconds>(high_resolution_clock::now() - start_t_init2);
-        // std::cout << "[INIT] Time matrix: " << (double) time_init.count() << std::endl; 
-        // std::cout << "[INIT] TIme solve: " << (double) time_init2.count() << std::endl;
-        // std::cout << "returning from init\n"; 
+    
         return error_sol;
         
 }
@@ -116,7 +96,8 @@ double NViewsClass::initCorrection(Eigen::VectorXd & sol_init,
 double NViewsClass::refineCorrection(const Eigen::MatrixXd & A0, 
                                      const Eigen::VectorXd & b0, 
                                      const Eigen::VectorXd & sol_init, 
-                                     Eigen::VectorXd & sol_ref)
+                                     Eigen::VectorXd & sol_ref, 
+                                     Eigen::MatrixXd & Ci)
 {
 
         Eigen::MatrixXd C(M_, 2 * N_cams_); 
@@ -125,10 +106,6 @@ double NViewsClass::refineCorrection(const Eigen::MatrixXd & A0,
         e = b0; 
         
         
-        // auto start_t_init = high_resolution_clock::now();
-        Eigen::VectorXd w0(2 * N_cams_ + 1); 
-        w0 << sol_init, 1; 
-        // std::cout << "Solution w:\n" << w0 << std::endl;
         for (int i=0; i < M_; i++)
         {
                 
@@ -140,29 +117,21 @@ double NViewsClass::refineCorrection(const Eigen::MatrixXd & A0,
                 C.block<1,2>(i, constr_red_[i].id_1) += p2.transpose() * constr_red_[i].F.transpose(); 
                 C.block<1,2>(i, constr_red_[i].id_2) += p1.transpose() * constr_red_[i].F; 
                 e(i) -= p1.transpose() * constr_red_[i].F * p2;
+}
 
-        }
-        
-        // auto time_init = duration_cast<nanoseconds>(high_resolution_clock::now() - start_t_init);
-        // std::cout << "Matrix C:\n" << C << std::endl; 
-        // std::cout << "Vector E:\n" << e << std::endl; 
-        
-            
-        
-        // auto start_t_init_t = high_resolution_clock::now();
-              
+
         Eigen::VectorXd sol_delta(2 * N_cams_);
         double error_sol_t = solveLinearSystemMinNorm(C.transpose() * C, - C.transpose() * e, sol_delta);
         
-        // auto time_init_t = duration_cast<nanoseconds>(high_resolution_clock::now() - start_t_init_t);
         
-                
-        // std::cout << "[REF2] Time matrix: " << (double) time_init.count() << std::endl; 
-        // std::cout << "[REF2] TIme solve: " << (double) time_init_t.count() << std::endl;
         
-       
+        // Save output
         sol_ref.resize(2 * N_cams_);       
         sol_ref = sol_delta; 
+        
+        Ci.resize(C.rows(), C.cols()); 
+        Ci = C; 
+        
         return error_sol_t;
         
 }   
@@ -191,12 +160,12 @@ NViewsResult NViewsClass::correctObservations(NViewsOptions & options)
         double error_init = initCorrection(sol_init, A0, b0);
         auto time_init = duration_cast<nanoseconds>(high_resolution_clock::now() - start_t_init);
         
-        // std::cout << "Checking constraints\n"; 
+        
         Eigen::VectorXd val_constr_i; 
         double max_constr_val_i = 10.0, sq_constr_i = 10.0;
         auto start_t_ref_i2 = high_resolution_clock::now();
         
-        // double tot_constr_i = checkConstraints(sol_init, constr_exp_, val_constr_i, max_constr_val_i);
+
         double tot_constr_i = checkConstraints(sol_init, constr_red_, val_constr_i, max_constr_val_i, sq_constr_i);
         
         auto time_ref_i2 = duration_cast<nanoseconds>(high_resolution_clock::now() - start_t_ref_i2);
@@ -208,7 +177,7 @@ NViewsResult NViewsClass::correctObservations(NViewsOptions & options)
             std::cout << "[CORR] L-1 norm constraints for initial guess: " << tot_constr_i << std::endl;   
         }
             
-        // std::cout << "[MAIN] Time constraints: " << (double) time_ref_i2.count() << std::endl;
+
         
         
         
@@ -232,6 +201,7 @@ NViewsResult NViewsClass::correctObservations(NViewsOptions & options)
         double time_ref = 0;
         double diff_sol = 10; 
         double error_lin = 10; 
+        Eigen::MatrixXd Cnext = A0; 
         // evaluate stopping condition 
         // We sop if
         // 1. we reach the maximum number of iterations
@@ -243,12 +213,12 @@ NViewsResult NViewsClass::correctObservations(NViewsOptions & options)
                 Eigen::VectorXd sol_next = sol_i;
               
                 auto start_t_ref_i = high_resolution_clock::now();
-                error_lin = refineCorrection(A0, b0, sol_i, sol_next);
+                error_lin = refineCorrection(A0, b0, sol_i, sol_next, Cnext);
                 auto time_ref_i = duration_cast<nanoseconds>(high_resolution_clock::now() - start_t_ref_i);
                 
                 diff_sol = (sol_next - sol_i).squaredNorm(); 
                 
-                // std::cout << "Checking constraints\n";
+            
                 tot_constr_i = checkConstraints(sol_next, constr_red_, val_constr_i, max_constr_val_i, sq_constr_i);
                 
                 if (options.debug)
@@ -287,6 +257,27 @@ NViewsResult NViewsClass::correctObservations(NViewsOptions & options)
             std::cout <<   "          Norm final solution: " << sol_i.squaredNorm() << std::endl;
             std::cout << "            Diff between solutions: " << diff_sol << std::endl; 
         }
+        
+        // Check optimality with sufficient condition
+
+        
+         // suff. condition       
+        NViewCertClass cert_obj(N_cams_, constr_red_, options.debug_cert); 
+    
+        // call function
+        auto start_t_cert = high_resolution_clock::now();
+        NCertRes res_cert = cert_obj.checkOptimality(sol_i, Cnext); 
+        auto time_cert = duration_cast<nanoseconds>(high_resolution_clock::now() - start_t_cert);
+                
+        
+        
+        /* Save results */
+        
+        res.min_eig = res_cert.min_eig; 
+        res.time_cert_mult = res_cert.time_mult;
+        res.time_cert_hess = res_cert.time_hess;
+                
+                
         res.n_iters = k_iter;
         res.sol_init = sol_init;
         res.sol_final = sol_i;
@@ -298,9 +289,11 @@ NViewsResult NViewsClass::correctObservations(NViewsOptions & options)
                 res.all_constr = val_constr_i;
         res.time_init = (double) time_init.count();
         res.time_ref = time_ref;
+        res.time_opt = (double) time_cert.count(); 
         res.error_lin = error_lin;
         return res;
 }
+
 
 // Print solution
 void NViewsClass::printResult(NViewsResult & res_corr)
@@ -315,6 +308,7 @@ void NViewsClass::printResult(NViewsResult & res_corr)
         std::cout << "Norm of the constraints L2: "   <<  res_corr.sq_constr << std::endl;
         std::cout << "Difference between the last two solutions: " << res_corr.diff_sol << std::endl;
         std::cout << "Error linear system: " << res_corr.error_lin << std::endl; 
+        std::cout << "Minimum eigenvalue Hessian: " << res_corr.min_eig << std::endl; 
         if (res_corr.all_constr.size() > 0)
                 std::cout << "value of all the constraints:\n" << res_corr.all_constr << std::endl;
         if (res_corr.rec_constr.size() > 0)
@@ -330,7 +324,7 @@ void NViewsClass::printResult(NViewsResult & res_corr)
                 }
          std::cout << "Time init [nanosecs]: " << res_corr.time_init << std::endl; 
          std::cout << "Time ref [nanosecs]: " << res_corr.time_ref << std::endl;
-
+         std::cout << "Time cert [nanosecs]: " << res_corr.time_opt << std::endl;
 }
 
 

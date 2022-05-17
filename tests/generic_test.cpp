@@ -529,9 +529,11 @@ int main(int argc, char** argv)
                                                         ft_exp <<  res_corr.time_init << ","; 
                                                         ft_exp <<  res_corr.time_ref << ","; 
                                                         ft_exp <<  res_corr.n_iters << ","; 
-                                                        // ft_exp <<  res_cert.time_mult << ","; 
-                                                        // ft_exp <<  res_cert.time_hess << ",";
-                                                        ft_exp << std::endl;        
+                                                        ft_exp <<  res_corr.time_opt << ","; 
+                                                        ft_exp <<  res_corr.time_cert_mult << ","; 
+                                                        ft_exp <<  res_corr.time_cert_hess << ","; 
+                                                        ft_exp <<  res_corr.min_eig << ","; 
+                                                        ft_exp <<  std::endl;        
                                                             
                                                         
                                                         /* Save diff wrt HS */

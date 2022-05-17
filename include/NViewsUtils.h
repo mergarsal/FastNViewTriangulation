@@ -8,13 +8,8 @@
 #include "NViewsTypes.h"
 
 namespace NViewsTrian{
-// Check constraints
-double checkConstraints(const Eigen::VectorXd & sol, 
-                        std::vector<Eigen::MatrixXd> & constr, 
-                        Eigen::VectorXd & val_constr,
-                        double & max_constr_val);
                         
-// same but with reduced constraints                        
+// check constraints                 
 double checkConstraints(const Eigen::VectorXd & sol, 
                         std::vector<Constr2View> & constr, 
                         Eigen::VectorXd & val_constr,

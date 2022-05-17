@@ -41,7 +41,7 @@ int main(int argc, char** argv)
     
         
         // parameters for estimation
-        double noise = 50.0;
+        double noise = 2.0;
         size_t n_points = 1;
         double max_parallax = 1.0;  // in meters
         double focal_length = 512; 
@@ -78,7 +78,6 @@ int main(int argc, char** argv)
                 
         Eigen::MatrixXd idx_matrix;
         int n_comb = generateM2Comb(M_cameras, idx_matrix);
-        // std::cout << "Graph matrix:\n" << idx_matrix << std::endl;
         
         // generate correspondences
         std::vector<PairObj> set_corr; 
@@ -128,17 +127,14 @@ int main(int argc, char** argv)
         
         // run correction method
         NViewsClass corr_N_view; 
-        // std::cout << "Creating matrices\n";
         // 1. Create constraint matrices
         corr_N_view.createProblemMatrices(set_corr, M_cameras); 
        
        
         // 2. Run correction
-        // std::cout << "Setting options\n";
         NViewsOptions options_corr; 
         options_corr.save_val_constr = false;
         options_corr.debug = false; 
-        // std::cout << "Correcting points\n";
         NViewsResult res_corr = corr_N_view.correctObservations(options_corr);
         
         // Show results
@@ -209,7 +205,6 @@ int main(int argc, char** argv)
         /** Run ceres **/
         std::vector<std::pair<Eigen::Matrix<double, 3, 4>,Eigen::Vector2d>> vector_pair_ceres_data; 
         vector_pair_ceres_data.reserve(M_cameras); 
-        // std::cout << "Populating data for ceres\n"; 
          
         for (int jc=0; jc<M_cameras;jc++)
         {
@@ -227,10 +222,7 @@ int main(int argc, char** argv)
                 std::pair<Eigen::Matrix<double, 3, 4>,Eigen::Vector2d> pair_i(P1, pt.topRows(2)); 
                 vector_pair_ceres_data.push_back(pair_i);                
         }
-        // std::cout << "Size data for ceres: " << vector_pair_ceres_data.size() << std::endl; 
-        // std::cout << "Number cameras: " << M_cameras << std::endl; 
   
-        // std::cout << "Running ceres\n";
         auto start_ceres = high_resolution_clock::now();
         Eigen::Vector3d P_ceres = CeresSolver::Triangulate(vector_pair_ceres_data, P_lin); 
         auto time_ceres = duration_cast<nanoseconds>(high_resolution_clock::now() - start_ceres);

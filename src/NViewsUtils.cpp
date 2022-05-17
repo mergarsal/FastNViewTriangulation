@@ -26,33 +26,6 @@ using namespace std;
 namespace NViewsTrian
 {
 
-// Check constraints
-double checkConstraints(const Eigen::VectorXd & sol, 
-                        std::vector<Eigen::MatrixXd> & constr, 
-                        Eigen::VectorXd & val_constr,
-                        double & max_constr_val)
-{
-        // Evaluate the constraints at the given solution
-        int M = constr.size(); 
-        val_constr.resize(M); 
-        val_constr.setZero(); 
-        
-        double tot_constr = 0.0; 
-        max_constr_val = -10.0;
-        Eigen::VectorXd w(sol.size() + 1); 
-        w << sol , 1; 
-        for (int i=0; i < M; i++)
-        {
-                double val_i = w.dot(constr[i] * w);
-                // std::cout << "Val constraint: " << val_i << std::endl; 
-                tot_constr += val_i;
-                val_constr(i) = val_i;
-                if (val_i > max_constr_val)
-                        max_constr_val = val_i;
-        }
-        // std::cout << "Value constraints:\n" << val_constr << std::endl;
-        return tot_constr;
-}
 
 // Check constraints with reduced constraints
 double checkConstraints(const Eigen::VectorXd & sol, 
@@ -76,20 +49,14 @@ double checkConstraints(const Eigen::VectorXd & sol,
                 Vector2 p2 = sol.block<2,1>(constr[i].id_2, 0);
                 double val_i = constr[i].b + p1.transpose() * constr[i].F * p2 + p1.dot(constr[i].Fp2) + p2.dot(constr[i].Fp1); 
                 
-                // std::cout << "Val constraint: " << val_i << std::endl; 
                 
                 val_constr(i) = val_i;
                 double abs_val_i = (val_i > 0) ? val_i : -val_i;
-                // std::cout << "Val i: " << val_i << std::endl; 
-                // std::cout << "Abs val i: " << abs_val_i << std::endl;
                 tot_constr += abs_val_i;
                 sq_constr_val += abs_val_i * abs_val_i;
-                // std::cout << "Tot constr: " << tot_constr << std::endl;
                 if (abs_val_i > max_constr_val)
                         max_constr_val = abs_val_i;
         }
-        // std::cout << "Squared norm of the constraints: " << sq_constr_val << std::endl;
-        // std::cout << "Value constraints:\n" << val_constr << std::endl;
         return tot_constr;
 }
        
@@ -99,11 +66,10 @@ double solveLinearSystemMinNorm(const Eigen::MatrixXd & A,
                                 const Eigen::VectorXd & b,
                                 Eigen::VectorXd & sol)
 {
-        // tol_rank = 1e-03 * 1e-03;
-        double tol_rank = 1e-03 * 1e-03 * 1e-03;  // 1e-03 works fine with simple approach
+        // tol_rank = 1e-03 * 1e-03 * 1e-03;
+        double tol_rank = 1e-03 * 1e-03 * 1e-03;  
         
         Eigen::VectorXd y_sol;
-        // std::cout << "Calling min norm\n"; 
         auto start_t_init = high_resolution_clock::now();
         Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> cod(A.rows(),
                                                 A.cols());
@@ -118,12 +84,8 @@ double solveLinearSystemMinNorm(const Eigen::MatrixXd & A,
         auto time_init2 = duration_cast<nanoseconds>(high_resolution_clock::now() - start_t_init2);
         
         
-        // std::cout << "Rank A: " << cod.rank() << std::endl;
-        // std::cout << "[MIN] Compute COD: " << (double) time_init.count() << std::endl; 
-        // std::cout << "[MIN] Solve system: " << (double) time_init2.count() << std::endl; 
         
         Eigen::VectorXd e_lin = A * y_sol - b;
-        // std::cout << "error LS: " << e_lin.squaredNorm() << std::endl;
         double error_sol = e_lin.squaredNorm();
         sol.resize(A.cols(), 1); 
         sol = y_sol;
@@ -174,7 +136,6 @@ double triangulateNPoint(const std::vector<Matrix4> & proj_s,
         }
         
         Eigen::JacobiSVD<Eigen::MatrixXd> svd(P, Eigen::ComputeFullV);
-        // std::cout << "Singular values P:\n" << svd.singularValues() << std::endl; 
         P_3d.setZero(); 
         Eigen::Vector4d P_hom = svd.matrixV().topRightCorner(4, 1);
         P_3d = P_hom.topRows(3) / P_hom(3);
