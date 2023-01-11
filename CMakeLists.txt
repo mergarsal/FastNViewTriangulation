@@ -57,13 +57,6 @@ message(STATUS "Eigen library not found!")
 endif()
 
 
-# FIND ADDITIONAL LIBRARIES
-
-ADD_DEFINITIONS ( -DPQXX_HIDE_EXP_OPTIONAL )
-
-# IMPORT OpenGV library
-add_definitions(-march=native)
-
 
 set(${LIBRARY_TARGET_NAME}_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set(${LIBRARY_TARGET_NAME}_SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src)

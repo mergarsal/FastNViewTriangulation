@@ -100,8 +100,10 @@ double NViewsClass::refineCorrection(const Eigen::MatrixXd & A0,
                                      Eigen::MatrixXd & Ci)
 {
 
+        
         Eigen::MatrixXd C(M_, 2 * N_cams_); 
         Eigen::VectorXd e(M_);
+        
         C = A0; 
         e = b0; 
         
@@ -110,20 +112,23 @@ double NViewsClass::refineCorrection(const Eigen::MatrixXd & A0,
         {
                 
                 Vector2 p1 = sol_init.block<2,1>(constr_red_[i].id_1, 0);
-                Vector2 p2 = sol_init.block<2,1>(constr_red_[i].id_2, 0);
-                
+                Vector2 p2 = sol_init.block<2,1>(constr_red_[i].id_2, 0);                
                 
                 
                 C.block<1,2>(i, constr_red_[i].id_1) += p2.transpose() * constr_red_[i].F.transpose(); 
                 C.block<1,2>(i, constr_red_[i].id_2) += p1.transpose() * constr_red_[i].F; 
                 e(i) -= p1.transpose() * constr_red_[i].F * p2;
-}
-
-
+        }
+                
         Eigen::VectorXd sol_delta(2 * N_cams_);
-        double error_sol_t = solveLinearSystemMinNorm(C.transpose() * C, - C.transpose() * e, sol_delta);
+        double error_sol_t; 
         
-        
+        if (C.cols() <= C.rows())
+                error_sol_t = solveLinearSystemMinNorm(C.transpose() * C, - C.transpose() * e, sol_delta);
+        else
+                error_sol_t = solveLinearSystemMinNorm(C, - e, sol_delta);
+                
+
         
         // Save output
         sol_ref.resize(2 * N_cams_);       
@@ -131,7 +136,6 @@ double NViewsClass::refineCorrection(const Eigen::MatrixXd & A0,
         
         Ci.resize(C.rows(), C.cols()); 
         Ci = C; 
-        
         return error_sol_t;
         
 }   
@@ -206,14 +210,17 @@ NViewsResult NViewsClass::correctObservations(NViewsOptions & options)
         // We sop if
         // 1. we reach the maximum number of iterations
         // 2. The diff between solutions is less than threshold
-        while ( (k_iter < options.max_iters) & (diff_sol > options.max_diff_sol) )
+
+        while ( (k_iter < options.max_iters) && (diff_sol > options.max_diff_sol) )
         {
  
                 // keep refining
                 Eigen::VectorXd sol_next = sol_i;
-              
+                
                 auto start_t_ref_i = high_resolution_clock::now();
+             
                 error_lin = refineCorrection(A0, b0, sol_i, sol_next, Cnext);
+
                 auto time_ref_i = duration_cast<nanoseconds>(high_resolution_clock::now() - start_t_ref_i);
                 
                 diff_sol = (sol_next - sol_i).squaredNorm(); 
@@ -228,17 +235,18 @@ NViewsResult NViewsClass::correctObservations(NViewsOptions & options)
                     std::cout << "            Total constraint L1: " << tot_constr_i;
                     std::cout << "            Total constraint L2: " << sq_constr_i;
                     std::cout << "            Norm prev solution: " << sol_i.squaredNorm(); 
-                    std::cout << "            Norm new solution: " << sol_next.squaredNorm() << std::endl;
+                    std::cout << "            Norm new solution: " << sol_next.squaredNorm();
                     std::cout << "            Diff between solutions: " << diff_sol << std::endl; 
+                   
                 }
-                
-                
+
                 if (options.record_constr)
                 {
                         res.rec_constr.push_back(val_constr_i);
                 
                 }
-                time_ref += (double) time_ref_i.count();
+                time_ref += (double) time_ref_i.count();                
+                                
                 // update iteration
                 k_iter++;        
                 sol_i = sol_next;

@@ -29,7 +29,6 @@ using namespace std::chrono;
 
 
 using namespace std;
-using namespace Eigen;
 using namespace NViewsTrian;
 
 
@@ -134,7 +133,7 @@ int main(int argc, char** argv)
         // 2. Run correction
         NViewsOptions options_corr; 
         options_corr.save_val_constr = false;
-        options_corr.debug = false; 
+        options_corr.debug = true; 
         NViewsResult res_corr = corr_N_view.correctObservations(options_corr);
         
         // Show results
