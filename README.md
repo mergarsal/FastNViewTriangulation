@@ -1,11 +1,9 @@
-# Fast N-View triangulation
-
-Manuscript in review
+# Certifiable solver for real-time N-view triangulation
 
 ---
 This repository contains the code 
 for the fast N-view triangulation 
-solver explained in [this paper](NONE) [1]. 
+solver explained in [this paper](https://ieeexplore.ieee.org/document/10044919). 
 
 
 **Authors:** 
@@ -19,7 +17,16 @@ solver explained in [this paper](NONE) [1].
 If you use this code for your research, please cite:
 
 ```
-NONE
+@ARTICLE{,
+    author = {Garcia-Salguero, Mercedes and Gonzalez-Jimenez, Javier},
+     month = {{{{feb}}}},
+     title = {Certifiable solver for real-time N-view triangulation},
+   journal = {IEEE Robotics and Automation Letters},
+      year = {2023},
+      issn = {2377-3766},
+       url = {http://mapir.isa.uma.es/papersrepo/2023/2023_mercedes_RAL_Nview_triangulation_paper.pdf},
+       doi = {10.1109/LRA.2023.3245408}
+}
 ```
 
 ## Dependencies
@@ -83,8 +90,6 @@ sudo make install
 
 
 ```
-add_definitions(-march=native)
-
 find_package(NViewsTrian REQUIRED)
 ```
 
