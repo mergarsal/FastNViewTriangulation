@@ -16,22 +16,17 @@
 // triangulation solver
 #include "NViewsClass.h"
 
-
 // data generation
 #include "../utils/generatePointCloud.h"
 // ceres solver
 #include "../utils/ceresSolver.h"
 
-// for eigendecomposition
+// for eigen decomposition
 #include <eigen3/Eigen/Dense>
 #include <Eigen/Eigenvalues> 
 
-
 #include <chrono>  // timer
 
-
-using namespace std;
-using namespace Eigen;
 using namespace NViewsTrian;
 using namespace std::chrono;
 
@@ -43,16 +38,11 @@ enum class methodGenPose{
         GENERAL 
 };  // end of enum class
 
-
-
-Vector3 returnThisTranslation( double max_parallax, const Vector3 & dir_parallax)
+Eigen::Vector3d returnThisTranslation( double max_parallax, const Eigen::Vector3d & dir_parallax)
 {
         return (dir_parallax);
 
 }; 
-
-
-
 
 int main(int argc, char** argv)
 {
@@ -237,7 +227,7 @@ int main(int argc, char** argv)
                                                         std::cout << "[ORBITAL CAMERA]\n";
                                                         str_in.max_parallax = 5;  // radius circle
                                                         
-                                                        Vector3 dist_vector; 
+                                                        Eigen::Vector3d dist_vector; 
                                                         dist_vector << dist_center_i, 0, 0; 
                                                         str_in.dir_parallax = dist_vector;
                                                         
@@ -307,26 +297,26 @@ int main(int argc, char** argv)
                                                         PairObj corr_i; 
                                                         int id1 = idx_matrix(0, jj); 
                                                         int id2 = idx_matrix(1, jj); 
-                                                        Matrix3 R1 = str_out.set_rot[id1]; 
-                                                        Matrix3 R2 = str_out.set_rot[id2]; 
-                                                        Vector3 t1 = str_out.set_trans[id1]; 
-                                                        Vector3 t2 = str_out.set_trans[id2]; 
-                                                        Matrix4 P1 = Matrix4::Identity(); 
-                                                        Matrix4 P2 = Matrix4::Identity(); 
+                                                        Eigen::Matrix3d R1 = str_out.set_rot[id1]; 
+                                                        Eigen::Matrix3d R2 = str_out.set_rot[id2]; 
+                                                        Eigen::Vector3d t1 = str_out.set_trans[id1]; 
+                                                        Eigen::Vector3d t2 = str_out.set_trans[id2]; 
+                                                        Eigen::Matrix4d P1 = Eigen::Matrix4d::Identity(); 
+                                                        Eigen::Matrix4d P2 = Eigen::Matrix4d::Identity(); 
                                                         P1.block<3,3>(0,0) = R1; 
                                                         P1.block<3,1>(0,3) = t1;
                                                         P2.block<3,3>(0,0) = R2; 
                                                         P2.block<3,1>(0,3) = t2;
                                                         
-                                                        Matrix4 Prel = P2 * P1.inverse(); 
-                                                        Matrix3 Rrel = Prel.block<3,3>(0,0); 
-                                                        Vector3 trel = Prel.block<3,1>(0,3);                 
+                                                        Eigen::Matrix4d Prel = P2 * P1.inverse(); 
+                                                        Eigen::Matrix3d Rrel = Prel.block<3,3>(0,0); 
+                                                        Eigen::Vector3d trel = Prel.block<3,1>(0,3);                 
                                                         trel.normalize();
                                                    
                                                         
                                                         
-                                                        Matrix3 Ess = Matrix3::Identity(); 
-                                                        Matrix3 Tx = Matrix3::Zero(); 
+                                                        Eigen::Matrix3d Ess = Eigen::Matrix3d::Identity(); 
+                                                        Eigen::Matrix3d Tx = Eigen::Matrix3d::Zero(); 
                                                         Tx << 0, -trel(2), trel(1), trel(2), 0, -trel(0), -trel(1), trel(0), 0; 
                                                         // fill T
                                                         Ess = Tx * Rrel;
@@ -341,8 +331,8 @@ int main(int argc, char** argv)
                                                 {
                                                         for (int jj=0; jj < M_cam_i; jj++)
                                                         {
-                                                                Matrix3 R = str_out.set_rot[jj]; 
-                                                                Vector3 t = str_out.set_trans[jj]; 
+                                                                Eigen::Matrix3d R = str_out.set_rot[jj]; 
+                                                                Eigen::Vector3d t = str_out.set_trans[jj]; 
                                                                 fprob << t(0) << "," << t(1) << "," << t(2) << ",";
                                                                 
                                                                 for (int id_r = 0; id_r < 3; id_r++)
@@ -370,7 +360,7 @@ int main(int argc, char** argv)
                                                              
                                                         }
                                                         
-                                                        Vector3 X = str_out.points_3D.col(idx);
+                                                        Eigen::Vector3d X = str_out.points_3D.col(idx);
                                                         
                                                         // run correction method
                                                         NViewsClass corr_N_view; 
@@ -391,9 +381,9 @@ int main(int argc, char** argv)
                                                         // c. Reconstruct 3D point by linear method
                                                     
                                                         // Matrix projections
-                                                        std::vector<Matrix4> proj_s; 
+                                                        std::vector<Eigen::Matrix4d> proj_s; 
                                                         proj_s.empty();
-                                                        std::vector<Vector3> obs_s, obs_init, obs_ref; 
+                                                        std::vector<Eigen::Vector3d> obs_s, obs_init, obs_ref; 
                                                         obs_s.empty(); 
                                                         obs_init.empty(); 
                                                         obs_ref.empty(); 
@@ -401,60 +391,60 @@ int main(int argc, char** argv)
                                                         for (int jc=0; jc<M_cam_i;jc++)
                                                         {
                                                                 // matrix projection for this camera
-                                                                Matrix3 R = str_out.set_rot[jc]; 
-                                                                Vector3 t = str_out.set_trans[jc]; 
-                                                                Matrix4 P1 = Matrix4::Identity(); 
+                                                                Eigen::Matrix3d R = str_out.set_rot[jc]; 
+                                                                Eigen::Vector3d t = str_out.set_trans[jc]; 
+                                                                Eigen::Matrix4d P1 = Eigen::Matrix4d::Identity(); 
                                                                 P1.block<3,3>(0,0) = R; 
                                                                 P1.block<3,1>(0,3) = t;
                                                                 proj_s.push_back(P1); 
                                                                 
                                                                 // observations
                                                                 
-                                                                Vector3 pt = iK * str_out.obs[idx].col(jc); 
+                                                                Eigen::Vector3d pt = iK * str_out.obs[idx].col(jc); 
                                                                 obs_s.push_back(pt);
                                                                 
                                                                 // update observation init
-                                                                Vector3 delta_init; 
+                                                                Eigen::Vector3d delta_init; 
                                                                 delta_init << res_corr.sol_init( jc*2), res_corr.sol_init(jc*2 + 1), 0;
                                                                 obs_init.push_back(pt + delta_init);
                                                                 
                                                                 // update observation refinenement  
-                                                                Vector3 delta_ref; 
+                                                                Eigen::Vector3d delta_ref; 
                                                                 delta_ref << res_corr.sol_final( jc*2), res_corr.sol_final(jc*2 + 1), 0; 
                                                                 obs_ref.push_back(pt + delta_ref);
                                                         }
                                                         
                                                                                                           
                                                         // triangulate point
-                                                        Vector3 P_lin; 
+                                                        Eigen::Vector3d P_lin; 
                                                         Eigen::VectorXd depths_lin; 
                                                         double error_lin = triangulateNPoint(proj_s, obs_s, P_lin, depths_lin);
                                                         
-                                                        Vector3 P_init; 
+                                                        Eigen::Vector3d P_init; 
                                                         Eigen::VectorXd depths_init; 
                                                         double error_init = triangulateNPoint(proj_s, obs_init, P_init, depths_init);
                                                         
-                                                        Vector3 P_ref; 
+                                                        Eigen::Vector3d P_ref; 
                                                         Eigen::VectorXd depths_ref; 
                                                         double error_ref = triangulateNPoint(proj_s, obs_ref, P_ref, depths_ref);
                                                         
                                                                                                                                                                 
                                                         /** Run ceres **/
-                                                        std::vector<std::pair<Eigen::Matrix<double, 3, 4>,Eigen::Vector2d>> vector_pair_ceres_data; 
+                                                        std::vector<std::pair<Eigen::Matrix<double, 3, 4>, Eigen::Vector2d>> vector_pair_ceres_data; 
                                                         vector_pair_ceres_data.reserve(M_cam_i); 
                                                          
                                                         for (int jc=0; jc<M_cam_i;jc++)
                                                         {
                                                                 // matrix projection for this camera
-                                                                Matrix3 R = str_out.set_rot[jc]; 
-                                                                Vector3 t = str_out.set_trans[jc]; 
-                                                                Matrix34 P1; 
+                                                                Eigen::Matrix3d R = str_out.set_rot[jc]; 
+                                                                Eigen::Vector3d t = str_out.set_trans[jc]; 
+                                                                Eigen::Matrix<double, 3, 4> P1; 
                                                                 P1.setZero(); 
                                                                 P1.block<3,3>(0,0) = R; 
                                                                 P1.block<3,1>(0,3) = t;
                                                                                 
                                                                 // observations
-                                                                Vector3 pt = obs_ref[jc]; 
+                                                                Eigen::Vector3d pt = obs_ref[jc]; 
                                                              
                                                                 std::pair<Eigen::Matrix<double, 3, 4>,Eigen::Vector2d> pair_i(P1, pt.topRows(2)); 
                                                                 vector_pair_ceres_data.push_back(pair_i);                
@@ -466,9 +456,9 @@ int main(int argc, char** argv)
                                                         Eigen::VectorXd sol_ceres = res_corr.sol_init; 
                                                         for (int jc=0; jc<M_cam_i;jc++)
                                                         {
-                                                            Matrix3 R = str_out.set_rot[jc]; 
-                                                            Vector3 t = str_out.set_trans[jc]; 
-                                                            Matrix34 P1; 
+                                                            Eigen::Matrix3d R = str_out.set_rot[jc]; 
+                                                            Eigen::Vector3d t = str_out.set_trans[jc]; 
+                                                            Eigen::Matrix<double, 3, 4> P1; 
                                                             P1.setZero(); 
                                                             P1.block<3,3>(0,0) = R; 
                                                             P1.block<3,1>(0,3) = t;
@@ -515,9 +505,9 @@ int main(int argc, char** argv)
                                                         fl1 << std::endl;
                                                         
                                                         // Linfty norm for observations 
-                                                        flinfty << res_corr.sol_init.lpNorm<Infinity>() << ","; 
-                                                        flinfty << res_corr.sol_final.lpNorm<Infinity>() << ","; 
-                                                        flinfty << sol_ceres.lpNorm<Infinity>() << ","; 
+                                                        flinfty << res_corr.sol_init.lpNorm<Eigen::Infinity>() << ","; 
+                                                        flinfty << res_corr.sol_final.lpNorm<Eigen::Infinity>() << ","; 
+                                                        flinfty << sol_ceres.lpNorm<Eigen::Infinity>() << ","; 
                                                         flinfty  << std::endl;
                                                         
                                                         
