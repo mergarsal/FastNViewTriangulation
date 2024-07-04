@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <iostream>
+#include <vector>
 #include <iomanip>
 #include <sstream>
 #include <fstream>  // for the file
